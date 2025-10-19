@@ -1,0 +1,30 @@
+# Ignore .NET build output
+bin/
+obj/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE folders
+.vs/
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Git and environment
+.git/
+.gitignore
+.env
+
+# Node modules (if any frontend)
+node_modules/
