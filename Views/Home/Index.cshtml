@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container mt-5">
+    <div class="text-center">
+        <h1 class="display-4 fw-bold text-primary mb-3">Welcome to the Malawi Currency Dashboard</h1>
+        <p class="lead text-muted">
+            Stay informed about how the <strong>Malawi Kwacha (MWK)</strong> performs against major world currencies 
+            like the <strong>US Dollar (USD)</strong>, <strong>Euro (EUR)</strong>, and <strong>British Pound (GBP)</strong>.
+            This platform provides real-time exchange rates, historical trends, and interactive data visualization.
+        </p>
+
+        <div class="mt-4">
+            <a asp-controller="Exchange" asp-action="Dashboard" class="btn btn-primary btn-lg shadow-sm">
+                📈 View Live Exchange Rates
+            </a>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h4 class="text-success mb-3">💱 Live Exchange Rates</h4>
+                    <p class="text-muted">
+                        Access the latest Malawi Kwacha exchange rates updated in real-time against global currencies.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h4 class="text-primary mb-3">📊 Visual Insights</h4>
+                    <p class="text-muted">
+                        Track and compare currency trends using interactive charts for easy understanding and analysis.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h4 class="text-warning mb-3">🌍 Economic Awareness</h4>
+                    <p class="text-muted">
+                        Stay informed about Malawi’s financial trends and currency performance in the global market.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 p-4 bg-light rounded shadow-sm text-center">
+        <h5 class="fw-bold text-secondary mb-2">About This Project</h5>
+        <p class="text-muted">
+            The Malawi Currency Dashboard is built using <strong>ASP.NET Core MVC</strong> and integrates real-time 
+            financial data to help users monitor exchange rates and market movements efficiently.  
+            This tool is designed for students, researchers, and anyone interested in Malawi’s currency performance.
+        </p>
+    </div>
+</div>

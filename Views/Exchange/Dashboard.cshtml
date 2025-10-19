@@ -1,0 +1,215 @@
+@model IEnumerable<CurrencyDashboard.Models.ExchangeRate>
+
+@{
+    ViewData["Title"] = "Malawi Currency Dashboard";
+
+    // Major currencies to prioritize
+    var majorCurrencies = new[] { "USD", "EUR", "GBP", "ZAR", "KES", "CNY", "JPY" };
+
+    // Split rates into major and others
+    var latestRates = Model
+        .GroupBy(r => r.TargetCurrency)
+        .Select(g => g.OrderByDescending(x => x.Timestamp).First())
+        .ToList();
+
+    var majorRates = latestRates.Where(r => majorCurrencies.Contains(r.TargetCurrency)).ToList();
+    var otherRates = latestRates.Where(r => !majorCurrencies.Contains(r.TargetCurrency)).OrderBy(r => r.TargetCurrency).ToList();
+
+    // Map of currency codes to flag emoji (simple visual representation)
+    var flags = new Dictionary<string, string>
+    {
+        { "USD", "🇺🇸" },
+        { "EUR", "🇪🇺" },
+        { "GBP", "🇬🇧" },
+        { "ZAR", "🇿🇦" },
+        { "KES", "🇰🇪" },
+        { "CNY", "🇨🇳" },
+        { "JPY", "🇯🇵" },
+        { "MWK", "🇲🇼" }
+    };
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-3 text-primary fw-bold">@ViewData["Title"]</h2>
+    <p class="text-center text-muted">Tracking the Malawi Kwacha (MWK) against major global currencies</p>
+
+    <!-- Major Currencies Summary Cards -->
+    <div class="row mb-4 text-center" id="currencyCards">
+        @foreach (var rate in majorRates)
+        {
+            <div class="col-md-2 col-6 mb-3 currency-card">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            @(flags.ContainsKey(rate.TargetCurrency) ? flags[rate.TargetCurrency] : "🌍")
+                            @rate.TargetCurrency
+                        </h5>
+                        <h3 class="text-success fw-bold">@rate.Rate.ToString("N2")</h3>
+                        <small class="text-muted">1 @rate.TargetCurrency = @rate.Rate.ToString("N2") MWK</small>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @foreach (var rate in otherRates)
+        {
+            <div class="col-md-2 col-6 mb-3 currency-card extra-card" style="display:none;">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-2">
+                        <h6 class="fw-bold mb-1">
+                            @(flags.ContainsKey(rate.TargetCurrency) ? flags[rate.TargetCurrency] : "🌍")
+                            @rate.TargetCurrency
+                        </h6>
+                        <p class="text-success mb-0 small">@rate.Rate.ToString("N2")</p>
+                        <small class="text-muted">1 @rate.TargetCurrency = @rate.Rate.ToString("N2") MWK</small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="text-center mb-4">
+        <button id="toggleCards" class="btn btn-outline-primary btn-sm">Show More</button>
+    </div>
+
+    <!-- Table and Chart Section -->
+    <div class="row">
+        <!-- Table -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">Exchange Rate Table</div>
+                <div class="card-body">
+                    <div id="tableContainer" style="max-height: 300px; overflow: hidden; transition: max-height 0.5s ease;">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Base</th>
+                                    <th>Target</th>
+                                    <th>Rate</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var rate in Model.OrderByDescending(r => r.Timestamp))
+                                {
+                                    <tr>
+                                        <td>@rate.BaseCurrency</td>
+                                        <td>@rate.TargetCurrency</td>
+                                        <td>@rate.Rate</td>
+                                        <td>@rate.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center">
+                        <button id="toggleTable" class="btn btn-outline-primary btn-sm mt-2">Show More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">Exchange Rate Trends</div>
+                <div class="card-body">
+                    <canvas id="rateChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="mt-4 p-4 bg-light shadow-sm rounded">
+        <h5>📊 Understanding the Chart</h5>
+        <p class="text-muted">
+            The chart above shows how the <strong>Malawi Kwacha (MWK)</strong> has been performing compared to other global currencies.
+            Each line represents a foreign currency (like USD, EUR, GBP, or ZAR).  
+            A rising line means <strong>the foreign currency is getting stronger</strong> (you need more MWK to buy 1 unit),  
+            while a falling line means <strong>the Kwacha is gaining strength</strong>.  
+            This helps visualize how the MKW fluctuates against key international currencies over time.
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+    <script>
+        // ====== Show 10 more cards per click ======
+        const toggleCardsBtn = document.getElementById("toggleCards");
+        const extraCards = Array.from(document.querySelectorAll(".extra-card"));
+        let visibleCount = 0;
+        const batchSize = 10;
+
+        toggleCardsBtn.addEventListener("click", () => {
+            const nextBatch = extraCards.slice(visibleCount, visibleCount + batchSize);
+
+            if (nextBatch.length > 0) {
+                nextBatch.forEach(card => {
+                    card.style.display = "block";
+                    card.style.opacity = "1";
+                    card.style.transition = "opacity 0.4s ease";
+                });
+                visibleCount += batchSize;
+            }
+
+            if (visibleCount >= extraCards.length) {
+                toggleCardsBtn.textContent = "Show Less";
+            }
+
+            // Collapse logic
+            if (toggleCardsBtn.textContent === "Show Less" && visibleCount >= extraCards.length) {
+                toggleCardsBtn.addEventListener("click", () => {
+                    extraCards.forEach(card => card.style.display = "none");
+                    visibleCount = 0;
+                    toggleCardsBtn.textContent = "Show More";
+                }, { once: true });
+            }
+        });
+
+        // ====== Table Show/Hide ======
+        const toggleTableBtn = document.getElementById("toggleTable");
+        const tableContainer = document.getElementById("tableContainer");
+        toggleTableBtn.addEventListener("click", () => {
+            const expanded = tableContainer.style.maxHeight === "none";
+            tableContainer.style.maxHeight = expanded ? "300px" : "none";
+            toggleTableBtn.textContent = expanded ? "Show More" : "Show Less";
+        });
+
+        // ====== Chart.js Logic ======
+        const rawData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model));
+        const grouped = {};
+        rawData.forEach(item => {
+            if (!grouped[item.TargetCurrency]) grouped[item.TargetCurrency] = [];
+            grouped[item.TargetCurrency].push({ x: item.Timestamp, y: item.Rate });
+        });
+
+        const datasets = Object.keys(grouped).map(currency => ({
+            label: currency,
+            data: grouped[currency],
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+        }));
+
+        new Chart(document.getElementById("rateChart"), {
+            type: "line",
+            data: { datasets },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: "MWK Exchange Rates Over Time" },
+                    legend: { position: "bottom" }
+                },
+                interaction: { mode: "nearest", axis: "x", intersect: false },
+                scales: {
+                    x: { type: "time", time: { unit: "day" }, title: { display: true, text: "Date" } },
+                    y: { title: { display: true, text: "Exchange Rate (MWK per 1 unit)" } },
+                },
+            },
+        });
+    </script>
+}
